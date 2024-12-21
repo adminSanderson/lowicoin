@@ -56,75 +56,55 @@ Balance: {balance}
     await message.reply(profile_text)
 
 @dp.message_handler(commands=['pay'])
-async def send_help(message: types.Message):
+async def handle_pay(message: types.Message):
     # Извлекаем текст команды
-    command_text = message.text
-    parts = command_text.split()
-
+    parts = message.text.split()
+    
     if len(parts) < 3:
-        await message.reply("❌ Неверный формат команды. Пример: /pay 2 812638482", parse_mode="Markdown")
+        await message.reply("❌ Неверный формат команды. Пример: /pay 2.5 jnRHDtjlCfhNfc5b")
         return
 
-    # Параметры команды
-    coin_amount = int(parts[1])  # Количество токенов
-    user_key = int(parts[2])  # ID получателя
+    try:
+        coin_amount = float(parts[1])  # Количество токенов
+        user_key = parts[2]  # ID получателя
+    except ValueError:
+        await message.reply("❌ Укажите корректное число для токенов.")
+        return
+
+    # Проверка на минимальное значение
+    if coin_amount < 0.00001:
+        await message.reply("❌ Минимальная сумма перевода: 0.00001 токенов.")
+        return
+
     sender_id = message.from_user.id  # ID отправителя
 
-    # Проверяем баланс отправителя
-    cursor.execute("SELECT coins FROM Users_coins WHERE user_id = ?", (sender_id,))
+    # Списываем токены у отправителя
+    cursor.execute("SELECT coins FROM Users_coins WHERE id_users = ?", (sender_id,))
     sender_data = cursor.fetchone()
 
-    if sender_data is None:
-        await message.reply("❌ У вас нет аккаунта или баланса.")
-        return
-
-    sender_balance = sender_data[0]
-
-    if sender_balance < coin_amount:
+    if sender_data is None or sender_data[0] < coin_amount:
         await message.reply("❌ Недостаточно токенов для перевода.")
         return
 
-    # Проверяем наличие получателя
-    cursor.execute("SELECT coins FROM Users_coins WHERE user_id = ?", (user_key,))
+    new_sender_balance = sender_data[0] - coin_amount
+    cursor.execute("UPDATE Users_coins SET coins = ? WHERE id_users = ?", (new_sender_balance, sender_id))
+
+    # Начисляем токены получателю
+    cursor.execute("SELECT coins FROM Users_coins WHERE id_pay = ?", (user_key,))
     receiver_data = cursor.fetchone()
 
-    if receiver_data is None:
-        await message.reply("❌ Получатель с указанным ID не найден.")
-        return
+    if receiver_data:
+        new_receiver_balance = receiver_data[0] + coin_amount
+        cursor.execute("UPDATE Users_coins SET coins = ? WHERE id_pay = ?", (new_receiver_balance, user_key))
 
-    # Списываем токены у отправителя
-    new_sender_balance = sender_balance - coin_amount
-    cursor.execute("UPDATE Users_coins SET coins = ? WHERE user_id = ?", (new_sender_balance, sender_id))
-
-    # Добавляем токены получателю
-    receiver_balance = receiver_data[0]
-    new_receiver_balance = receiver_balance + coin_amount
-    cursor.execute("UPDATE Users_coins SET coins = ? WHERE user_id = ?", (new_receiver_balance, user_key))
-
-    # Генерация уникального ID транзакции
-    transaction_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-
-    # Лог транзакции (по желанию)
-    cursor.execute(
-        "INSERT INTO Transactions (transaction_id, sender_id, receiver_id, amount) VALUES (?, ?, ?, ?)",
-        (transaction_id, sender_id, user_key, coin_amount)
-    )
+    connection.commit()
 
     # Уведомление об успешной транзакции
     await message.reply(
-        f"✅ Успешно переведено {coin_amount} токенов пользователю с ID {user_key}.\n"
-        f"💳 Ваш новый баланс: {new_sender_balance} токенов.",
-        parse_mode="Markdown"
+        f"✅ Успешно переведено {coin_amount:.5f} токенов пользователю с ID {user_key}.\n"
+        f"💳 Ваш новый баланс: {new_sender_balance:.5f} токенов."
     )
 
-    # Уведомление получателя (опционально)
-    try:
-        await bot.send_message(
-            user_key,
-            f"💸 Вам поступило {coin_amount} токенов от пользователя с ID {sender_id}."
-        )
-    except:
-        await message.reply("⚠️ Не удалось уведомить получателя. Он может быть недоступен.")
 
 @dp.message_handler()
 async def echo(message: types.Message):
