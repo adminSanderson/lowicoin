@@ -22,7 +22,7 @@ async def send_welcome(message: types.Message):
     result = cursor.fetchone()
 
     if result is None:
-        cursor.execute('INSERT INTO Users_coins (id_users,id_pay, coins) VALUES (?, ?, ?)', (user_id,random_string, 2))
+        cursor.execute('INSERT INTO Users_coins (id_users,id_pay, coins) VALUES (?, ?, ?)', (user_id, random_string(), 2))
         connection.commit()  # Не забываем зафиксировать изменения в базе
         await message.reply(
             f'Hello, *{full_name}*!\nNice to meet you.\nYour profile has been *created* and we have replenished your balance with 2 lowi coins!\nTap /commands to start or /help to _... help message?_!',

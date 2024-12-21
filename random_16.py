@@ -1,9 +1,7 @@
-import secrets
 import string
+import random
 
-def generate_random_string(length=16):
-    characters = string.ascii_letters + string.digits  # Все буквы (A-Z, a-z) и цифры (0-9)
-    random_string = ''.join(secrets.choice(characters) for _ in range(length))
-    return random_string
+def random_string(length=16):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-random_string = generate_random_string(16)
+# random_string = generate_random_string(16)
