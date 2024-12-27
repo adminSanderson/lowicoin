@@ -1,7 +1,11 @@
-from aiogram import types, Dispatcher
+from aiogram import types, Router, Dispatcher
+from aiogram.filters import Command
 from database.database import get_user_balance, get_user_idpay
 from datetime import datetime
 
+router = Router()
+
+@router.message(Command(commands=['me', 'profile']))
 async def user_profile(message: types.Message):
     now = datetime.now()
     user_id = message.from_user.id
@@ -16,7 +20,7 @@ async def user_profile(message: types.Message):
 *Date:* {now.strftime("%Y-%m-%d")}, {now.strftime("%H:%M:%S")}
 *Balance:* {balance}
     '''
-    await message.reply(profile_text, parse_mode="Markdown")
+    await message.answer(profile_text, parse_mode="Markdown")
 
 def register_handlers(dp: Dispatcher):
-    dp.register_message_handler(user_profile, commands=['me', 'profile'])
+    dp.include_router(router)

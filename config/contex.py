@@ -9,3 +9,8 @@ Here are all the lowi commands:
 pay_text = '''
 To send lowi coins, write the user's key after the /pay command
 '''
+
+star_buy_text = '''
+OK, here is the lowi coin rate:
+1 (one) lowi coin = 1 (one) star
+'''

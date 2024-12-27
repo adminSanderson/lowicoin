@@ -1,0 +1,4 @@
+aiogram>=3.16.0
+aiohttp>=3.8.4
+sqlite3
+python-dotenv
