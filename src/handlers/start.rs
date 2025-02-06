@@ -1,18 +1,21 @@
-use frankenstein::{Api, Message, SendMessageParams, TelegramApi};
 use crate::db;
-use crate::random_16;
 use crate::random_16::random_string;
+use frankenstein::{Api, Message, SendMessageParams, TelegramApi};
 
 pub async fn handle_start(api: &Api, message: Message) {
     // Extract user information from the message
     let user_id = message.from.as_ref().map(|u| u.id).unwrap_or(0);
-    let full_name = message.from.as_ref().map(|u| u.first_name.clone()).unwrap_or_else(|| "User".to_string());
+    let full_name = message
+        .from
+        .as_ref()
+        .map(|u| u.first_name.clone())
+        .unwrap_or_else(|| "User".to_string());
 
     let exists = db::check_user(user_id as i64).unwrap_or(false);
     let response: String;
     if !exists {
         let new_idpay = random_string(16);
-        if let Err(e) = db::add_user(user_id as i64, &new_idpay, 2.0) {
+        if let Err(e) = db::add_user(user_id as i64, &new_idpay, 2) {
             response = format!("Error creating user: {}", e);
         } else {
             response = format!(
