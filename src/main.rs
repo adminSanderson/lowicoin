@@ -4,12 +4,12 @@ mod db;
 mod handlers;
 mod random_16;
 
-use cfg::API_TOKEN;
 use db::init_db;
 use frankenstein::{Api, BotCommand, GetUpdatesParams, SetMyCommandsParams, TelegramApi};
 use handlers::dispatch_message;
 use paris::Logger;
 use std::error::Error;
+use crate::cfg::API_TOKEN;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
